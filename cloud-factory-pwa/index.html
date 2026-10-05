@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#eaf6ff">
+  <meta name="description" content="구름을 만들고 주문에 맞춰 납품하는 포근한 구름 공장 시뮬레이터">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="구름 공장">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>구름 공장</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #27394d;
+      --muted: #738296;
+      --line: #e7e9ec;
+      --paper: #fffefa;
+      --cream: #fff9eb;
+      --sky: #eaf6ff;
+      --blue: #5a9fe1;
+      --blue-deep: #397fc1;
+      --blue-soft: #e9f4ff;
+      --mint: #dff4e9;
+      --mint-deep: #337d5c;
+      --yellow: #ffdf8d;
+      --yellow-deep: #96651a;
+      --lavender: #eee8ff;
+      --pink: #ffe8ec;
+      --shadow: 0 16px 42px rgba(72, 100, 127, .09);
+      --radius-xl: 26px;
+      --radius-lg: 20px;
+      --radius-md: 15px;
+      font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 5% 13%, rgba(255,255,255,.95) 0 7%, transparent 7.2%),
+        radial-gradient(ellipse at 92% 8%, rgba(255,255,255,.72) 0 8%, transparent 8.2%),
+        linear-gradient(180deg, #e9f6ff 0, #f4f9ff 360px, #f8f7f3 720px, #f8f7f3 100%);
+    }
+
+    button { font: inherit; touch-action: manipulation; }
+    button:focus-visible, a:focus-visible, summary:focus-visible {
+      outline: 3px solid #276da9;
+      outline-offset: 3px;
+    }
+
+    .page-shell { width: min(1440px, 100%); margin: 0 auto; padding: 26px 32px 36px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 7px 2px 22px;
+    }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 220px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border: 1px solid rgba(112, 168, 216, .2);
+      border-radius: 18px;
+      background: rgba(255,255,255,.74);
+      box-shadow: 0 5px 16px rgba(87, 144, 189, .12);
+    }
+    .brand-mark svg { width: 39px; height: 34px; }
+    .brand-kicker { margin: 0 0 1px; color: #5c88ac; font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+    h1 { margin: 0; font-size: 23px; letter-spacing: -.055em; }
+
+    .level-box { display: flex; align-items: center; gap: 12px; width: min(350px, 34vw); }
+    .level-badge {
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      width: 43px;
+      height: 43px;
+      border: 2px solid rgba(255,255,255,.95);
+      border-radius: 50%;
+      background: #f9e6ad;
+      color: #77551b;
+      box-shadow: 0 3px 12px rgba(145, 118, 52, .12);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .level-info { min-width: 0; flex: 1; }
+    .level-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .level-name { font-size: 13px; font-weight: 800; }
+    .xp-copy { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .xp-track { height: 8px; overflow: hidden; border-radius: 20px; background: rgba(255,255,255,.85); box-shadow: inset 0 1px 2px rgba(53,91,119,.1); }
+    .xp-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #82c6f3, #80d9bf); transition: width .35s ease; }
+
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .install-button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 13px;
+      border: 1px solid #c9e4d4;
+      border-radius: 15px;
+      background: #effaf3;
+      color: #397a58;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .install-button:hover { background: #e2f5e9; }
+    .install-button[hidden] { display: none; }
+    .coin-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 15px;
+      border: 1px solid #f0dfa9;
+      border-radius: 15px;
+      background: #fff8df;
+      color: #755717;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .coin-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #ffdc78; color: #866019; font-size: 13px; }
+    .coin-pill strong { color: #5b471d; font-size: 17px; font-variant-numeric: tabular-nums; }
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(134, 160, 181, .2);
+      border-radius: 15px;
+      background: rgba(255,255,255,.76);
+      color: #5d7083;
+      cursor: pointer;
+    }
+    .icon-button:hover { background: white; transform: translateY(-1px); }
+    .icon-button svg { width: 20px; height: 20px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(245px, 285px) minmax(400px, 1fr) minmax(270px, 305px);
+      grid-template-areas: "orders workshop side";
+      align-items: start;
+      gap: 20px;
+    }
+    .left-column { grid-area: orders; display: grid; gap: 16px; }
+    .center-column { grid-area: workshop; display: grid; gap: 18px; min-width: 0; }
+    .right-column { grid-area: side; display: grid; gap: 16px; }
+    .panel {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid rgba(222, 226, 228, .88);
+      border-radius: var(--radius-xl);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+    .panel-pad { padding: 21px; }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+    .section-heading { margin: 0; font-size: 17px; letter-spacing: -.045em; }
+    .section-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .eyebrow { color: #8a9aab; font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .tiny-pill { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 999px; background: #f1f5f7; color: #708194; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .tiny-pill.green { background: #e6f6ec; color: #458262; }
+
+    .save-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 13px;
+      border: 1px solid #efd99a;
+      border-radius: 15px;
+      background: #fff8df;
+      color: #6a5629;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .save-banner[hidden] { display: none; }
+    .save-banner.error { border-color: #f0c2bb; background: #fff0ed; color: #88493e; }
+    .save-banner .banner-mark { flex: 0 0 auto; font-size: 15px; }
+    .save-banner .banner-copy { flex: 1; }
+    .banner-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 7px; }
+    .banner-button { min-height: 30px; padding: 4px 9px; border: 1px solid currentColor; border-radius: 9px; background: rgba(255,255,255,.65); color: inherit; cursor: pointer; font-size: 10px; font-weight: 800; }
+
+    .intro-card {
+      position: relative;
+      padding: 15px 16px;
+      border: 1px solid #d6e9f7;
+      border-radius: 17px;
+      background: linear-gradient(135deg, #f1faff, #fffdf4);
+    }
+    .intro-card[hidden] { display: none; }
+    .intro-title { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; font-weight: 900; }
+    .intro-title .sparkle { color: #e0a736; font-size: 16px; }
+    .intro-text { margin: 0; color: #62758a; font-size: 11px; line-height: 1.6; }
+    .intro-dismiss { display: inline-flex; min-height: 34px; align-items: center; margin-top: 10px; padding: 0 11px; border: 0; border-radius: 10px; background: #e1f0fb; color: #47769a; cursor: pointer; font-size: 11px; font-weight: 800; }
+    .intro-dismiss:hover { background: #d3e9f8; }
+
+    .order-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #ebdcae;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(155deg, #fff9e8 0%, #fffefa 68%, #f8fbff 100%);
+      box-shadow: 0 14px 34px rgba(128, 109, 55, .09);
+    }
+    .order-card:before {
+      position: absolute;
+      top: -40px;
+      right: -26px;
+      width: 150px;
+      height: 130px;
+      border-radius: 50%;
+      background: rgba(255, 231, 171, .27);
+      content: "";
+    }
+    .order-inner { position: relative; padding: 20px; }
+    .order-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .order-number { color: #9a885b; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+    .order-stamp { display: grid; place-items: center; width: 35px; height: 35px; border: 1px dashed #d7b85d; border-radius: 50%; background: #fff1c8; color: #ae7926; font-size: 14px; transform: rotate(9deg); }
+    .order-destination { margin: 10px 0 3px; color: #5a6570; font-size: 12px; font-weight: 800; }
+    .order-title { max-width: 235px; margin: 0; font-size: 20px; line-height: 1.35; letter-spacing: -.06em; }
+    .order-art { display: grid; place-items: center; height: 112px; margin: 6px 0 2px; }
+    .order-art svg { width: 128px; height: 104px; filter: drop-shadow(0 8px 8px rgba(82,138,181,.12)); }
+    .order-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0 8px; border-top: 1px dashed #e6d9b8; color: #6c7782; font-size: 11px; }
+    .order-count-row strong { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .order-progress { display: flex; gap: 5px; margin: 0 0 14px; }
+    .order-progress span { display: block; width: 17px; height: 5px; border-radius: 9px; background: #e8e8e2; }
+    .order-progress span.filled { background: #75c3a2; }
+    .reward-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 13px; padding: 10px 11px; border-radius: 13px; background: rgba(255,255,255,.72); }
+    .reward-label { color: #7c7d74; font-size: 10px; font-weight: 800; }
+    .reward-value { color: #755719; font-size: 13px; font-weight: 900; white-space: nowrap; }
+    .reward-bonus { display: block; margin-top: 2px; color: #a18a57; font-size: 9px; font-weight: 700; text-align: right; }
+    .primary-button {
+      display: flex;
+      width: 100%;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 14px;
+      background: #5c9fdf;
+      box-shadow: 0 4px 0 #4285c5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .primary-button:hover:not(:disabled) { background: #4c91d3; transform: translateY(-1px); box-shadow: 0 5px 0 #4285c5; }
+    .primary-button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #4285c5; }
+    .primary-button:disabled { background: #d8e0e7; box-shadow: 0 4px 0 #c5ced6; color: #718092; cursor: not-allowed; }
+    .order-hint { margin: 10px 0 0; color: #8893a0; font-size: 10px; line-height: 1.45; text-align: center; }
+
+    .weather-note { display: flex; align-items: center; gap: 11px; padding: 14px 15px; border: 1px solid #e8e9ef; border-radius: 18px; background: rgba(255,255,255,.72); }
+    .weather-sun { display: grid; flex: 0 0 auto; place-items: center; width: 39px; height: 39px; border-radius: 13px; background: #fff2c9; color: #b38223; font-size: 19px; }
+    .weather-note strong { display: block; margin-bottom: 3px; font-size: 11px; }
+    .weather-note span { display: block; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+    .workshop-panel { padding: 21px; }
+    .workshop-head { align-items: center; margin-bottom: 14px; }
+    .workshop-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; background: #e6f6ec; color: #438061; font-size: 10px; font-weight: 900; white-space: nowrap; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #62b78a; box-shadow: 0 0 0 3px rgba(98,183,138,.16); }
+    .workshop-status.busy { background: #fff2d4; color: #9a7126; }
+    .workshop-status.busy .status-dot { background: #e5b447; box-shadow: 0 0 0 3px rgba(229,180,71,.18); }
+    .machine-scene {
+      position: relative;
+      display: flex;
+      min-height: 174px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin: 0 0 18px;
+      border: 1px solid #dceefa;
+      border-radius: 19px;
+      background:
+        radial-gradient(ellipse at 20% 24%, rgba(255,255,255,.82) 0 6%, transparent 6.4%),
+        radial-gradient(ellipse at 80% 30%, rgba(255,255,255,.72) 0 7%, transparent 7.4%),
+        linear-gradient(180deg, #e8f7ff, #f7fcff 75%, #ecf7ef);
+    }
+    .scene-cloud { position: absolute; top: 10px; left: 18%; width: 62px; opacity: .78; animation: drift 7s ease-in-out infinite alternate; }
+    .scene-cloud.two { top: 26px; right: 13%; left: auto; width: 42px; animation-delay: -3s; opacity: .57; }
+    .machine-svg { position: relative; z-index: 1; width: min(390px, 88%); height: auto; max-height: 160px; }
+    .machine-cloud { transform-origin: center; animation: bob 2.8s ease-in-out infinite; }
+    .windmill { transform-origin: 323px 91px; animation: spin 8s linear infinite; }
+    .scene-spark { animation: twinkle 2.5s ease-in-out infinite alternate; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes drift { from { transform: translateX(-5px); } to { transform: translateX(12px); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes twinkle { from { opacity: .4; } to { opacity: 1; } }
+
+    .cloud-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .cloud-option {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 106px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 11px 10px 10px;
+      border: 1px solid #e5e9ed;
+      border-radius: 16px;
+      background: white;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    }
+    .cloud-option:hover:not(:disabled) { border-color: #b9d9f1; transform: translateY(-1px); }
+    .cloud-option.selected { border: 2px solid #6faee1; padding: 10px 9px 9px; background: #f2f9ff; box-shadow: 0 0 0 3px rgba(111,174,225,.1); }
+    .cloud-option:disabled { cursor: not-allowed; }
+    .cloud-option:disabled:not(.locked) { opacity: .72; }
+    .cloud-option.locked { border-style: dashed; background: #f7f6f3; color: #7a858f; }
+    .cloud-option-top { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 3px; }
+    .cloud-option svg.cloud-icon { width: 40px; height: 34px; }
+    .selected-mark { color: #488cc7; font-size: 12px; font-weight: 900; }
+    .lock-mark { color: #9ba3aa; font-size: 12px; }
+    .cloud-option-name { display: block; margin-top: 5px; font-size: 11px; font-weight: 900; line-height: 1.2; }
+    .cloud-option-meta { display: block; margin-top: 4px; color: #8391a0; font-size: 9px; line-height: 1.35; }
+    .lock-note { color: #8f8171; }
+
+    .recipe-strip { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 13px 1px 12px; padding: 10px 11px; border-radius: 13px; background: #f7f8fa; }
+    .recipe-copy { min-width: 0; }
+    .recipe-title { color: #8090a0; font-size: 9px; font-weight: 900; letter-spacing: .08em; }
+    .recipe-text { overflow: hidden; margin-top: 3px; color: #485c70; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .recipe-time { flex: 0 0 auto; padding: 6px 8px; border-radius: 9px; background: white; color: #5680a3; font-size: 10px; font-weight: 900; }
+
+    .production-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
+    .quantity-box { display: flex; min-height: 54px; align-items: center; justify-content: space-between; gap: 9px; padding: 5px 7px; border: 1px solid #e6e9ec; border-radius: 14px; background: #fff; }
+    .quantity-label { padding-left: 5px; color: #697b8c; font-size: 10px; font-weight: 800; }
+    .quantity-actions { display: flex; align-items: center; gap: 5px; }
+    .step-button { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #e5e9ec; border-radius: 11px; background: #f8fafb; color: #59718a; cursor: pointer; font-size: 19px; font-weight: 700; line-height: 1; }
+    .step-button:hover:not(:disabled) { background: #edf6fc; border-color: #cce3f4; }
+    .step-button:disabled { opacity: .42; cursor: not-allowed; }
+    .quantity-value { min-width: 22px; color: var(--ink); font-size: 15px; font-weight: 900; text-align: center; font-variant-numeric: tabular-nums; }
+    .start-button { min-height: 54px; border: 0; border-radius: 14px; background: #6dbb97; box-shadow: 0 4px 0 #4e9e7b; color: #fff; cursor: pointer; font-size: 12px; font-weight: 900; }
+    .start-button:hover:not(:disabled) { background: #5caf88; transform: translateY(-1px); }
+    .start-button:disabled { background: #d9e4df; box-shadow: 0 4px 0 #c7d4ce; color: #72847b; cursor: not-allowed; }
+    .start-icon { margin-right: 5px; font-size: 15px; vertical-align: -1px; }
+    .production-hint { min-height: 16px; margin: 9px 2px 0; color: #8a96a2; font-size: 10px; line-height: 1.45; }
+    .production-hint.warning { color: #936b2a; }
+
+    .active-batch {
+      margin-top: 13px;
+      padding: 13px;
+      border: 1px solid #d7ebdf;
+      border-radius: 15px;
+      background: linear-gradient(120deg, #f0faf4, #f8fcff);
+    }
+    .active-batch[hidden] { display: none; }
+    .batch-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+    .batch-name { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 11px; font-weight: 900; }
+    .batch-name svg { flex: 0 0 auto; width: 33px; height: 29px; }
+    .batch-time { color: #407b61; font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .batch-track { height: 8px; overflow: hidden; border-radius: 99px; background: #dcebe1; }
+    .batch-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #87cfaa, #70b8df); transition: width .2s linear; }
+    .batch-note { margin: 8px 0 0; color: #718779; font-size: 10px; line-height: 1.4; }
+
+    .inventory-panel { padding: 19px 21px; }
+    .storage-count { padding: 6px 9px; border-radius: 10px; background: #eff6fa; color: #56758d; font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .storage-track { height: 6px; overflow: hidden; margin: -6px 0 14px; border-radius: 99px; background: #edf0f1; }
+    .storage-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #90cce9, #8bd2ac); transition: width .25s ease; }
+    .inventory-list { display: grid; gap: 8px; }
+    .inventory-row { display: flex; align-items: center; gap: 10px; min-height: 53px; padding: 8px 10px; border: 1px solid #eef0f1; border-radius: 13px; background: #fff; }
+    .inventory-row svg { flex: 0 0 auto; width: 36px; height: 30px; }
+    .inventory-copy { min-width: 0; flex: 1; }
+    .inventory-name { display: block; font-size: 11px; font-weight: 900; }
+    .inventory-quality { display: block; margin-top: 3px; color: #8995a0; font-size: 9px; }
+    .inventory-quantity { display: grid; min-width: 34px; height: 30px; place-items: center; padding: 0 7px; border-radius: 10px; background: #f2f6f7; color: #5e7183; font-size: 11px; font-weight: 900; }
+    .inventory-empty { padding: 17px 13px; border: 1px dashed #dfe6e9; border-radius: 14px; background: #fcfdfd; color: #84919c; font-size: 11px; line-height: 1.6; text-align: center; }
+    .inventory-empty .empty-cloud { display: block; margin-bottom: 6px; color: #a7ccdf; font-size: 24px; }
+    .inventory-empty a { display: inline-block; margin-top: 7px; color: #447fae; font-size: 10px; font-weight: 900; text-decoration: none; }
+    .inventory-empty a:hover { text-decoration: underline; }
+    .reserved-note { margin: 10px 1px 0; color: #85929d; font-size: 10px; }
+
+    .upgrade-panel { padding: 19px; }
+    .upgrade-list { display: grid; gap: 10px; }
+    .upgrade-card { padding: 13px; border: 1px solid #ececef; border-radius: 16px; background: #fff; }
+    .upgrade-top { display: flex; align-items: flex-start; gap: 10px; }
+    .upgrade-icon { display: grid; flex: 0 0 auto; width: 37px; height: 37px; place-items: center; border-radius: 12px; background: #edf5ff; font-size: 19px; }
+    .upgrade-card.storage .upgrade-icon { background: #f1edff; }
+    .upgrade-text { min-width: 0; flex: 1; }
+    .upgrade-name { margin: 1px 0 4px; font-size: 12px; font-weight: 900; }
+    .upgrade-desc { margin: 0; color: #7e8a97; font-size: 10px; line-height: 1.45; }
+    .upgrade-level { flex: 0 0 auto; padding: 5px 7px; border-radius: 8px; background: #f3f5f6; color: #768594; font-size: 9px; font-weight: 900; }
+    .upgrade-bottom { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f1f2; }
+    .upgrade-effect { color: #6a7d8e; font-size: 9px; line-height: 1.4; }
+    .upgrade-button { display: inline-flex; min-width: 89px; min-height: 37px; align-items: center; justify-content: center; gap: 5px; padding: 0 9px; border: 0; border-radius: 11px; background: #eef6ff; color: #4f82b0; cursor: pointer; font-size: 10px; font-weight: 900; white-space: nowrap; }
+    .upgrade-button:hover:not(:disabled) { background: #e0efff; }
+    .upgrade-button:disabled { background: #f0f1f1; color: #90999e; cursor: not-allowed; }
+    .upgrade-button.maxed { background: #eef6ee; color: #4f8b64; }
+
+    .event-panel { padding: 18px 19px; }
+    .event-list { display: grid; gap: 9px; }
+    .event-item { display: flex; align-items: flex-start; gap: 9px; padding: 9px; border-radius: 12px; background: #f8fafb; }
+    .event-symbol { display: grid; flex: 0 0 auto; width: 27px; height: 27px; place-items: center; border-radius: 9px; background: #fff2ce; font-size: 13px; }
+    .event-item.rainbow .event-symbol { background: #f6eaff; }
+    .event-copy { min-width: 0; }
+    .event-title { margin: 1px 0 3px; font-size: 10px; font-weight: 900; }
+    .event-description { margin: 0; color: #7f8d99; font-size: 9px; line-height: 1.4; }
+    .event-time { display: block; margin-top: 4px; color: #9aa4ad; font-size: 8px; }
+    .event-empty { padding: 9px 2px 4px; color: #8c98a2; font-size: 10px; line-height: 1.55; }
+    .event-footnote { margin: 11px 0 0; padding-top: 9px; border-top: 1px solid #f0f1f2; color: #97a1a9; font-size: 9px; line-height: 1.5; }
+
+    .footer-note { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 24px 10px 0; color: #91a0ad; font-size: 10px; }
+    .footer-note span { color: #c2a968; }
+
+    dialog {
+      width: min(440px, calc(100vw - 30px));
+      max-height: min(88vh, 650px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid #e3e8eb;
+      border-radius: 22px;
+      background: #fffefa;
+      box-shadow: 0 24px 80px rgba(40, 61, 80, .22);
+      color: var(--ink);
+    }
+    dialog::backdrop { background: rgba(43, 61, 79, .36); backdrop-filter: blur(3px); }
+    .dialog-inner { padding: 24px; }
+    .dialog-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .dialog-title { margin: 0; font-size: 19px; letter-spacing: -.05em; }
+    .dialog-description { margin: 8px 0 18px; color: #718092; font-size: 12px; line-height: 1.65; }
+    .install-help { margin: 0 0 16px; padding: 13px; border: 1px solid #dfebf0; border-radius: 14px; background: #f6fbfd; }
+    .install-help strong { display: block; margin-bottom: 5px; color: #405e74; font-size: 11px; }
+    .install-help p { margin: 0; color: #718393; font-size: 10px; line-height: 1.6; }
+    .install-help .install-state { display: block; margin-top: 7px; color: #4b8766; font-weight: 800; }
+    .dialog-close { display: grid; flex: 0 0 auto; width: 36px; height: 36px; place-items: center; border: 1px solid #e8ebed; border-radius: 11px; background: white; color: #718092; cursor: pointer; font-size: 18px; }
+    .storage-status-card { margin: 0 0 17px; padding: 12px; border-radius: 13px; background: #f5f8f8; color: #667887; font-size: 11px; line-height: 1.55; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+    .secondary-button, .danger-button { min-height: 42px; padding: 0 14px; border: 1px solid #e1e6e9; border-radius: 12px; background: white; color: #5e7183; cursor: pointer; font-size: 11px; font-weight: 900; }
+    .secondary-button:hover { background: #f6f8f9; }
+    .danger-button { border-color: #f0d0cb; background: #fff2f0; color: #99564a; }
+    .danger-button:hover { background: #ffe7e3; }
+    .blocked-dialog .dialog-inner { padding-top: 28px; }
+    .blocked-icon { display: grid; width: 48px; height: 48px; place-items: center; margin-bottom: 13px; border-radius: 16px; background: #fff2d9; color: #a87623; font-size: 23px; }
+
+    .toast-region { position: fixed; z-index: 10; right: 22px; bottom: 22px; display: grid; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 15px;
+      border: 1px solid #d6e7db;
+      border-radius: 15px;
+      background: #fffefa;
+      box-shadow: 0 12px 35px rgba(47,70,88,.17);
+      color: #385d49;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.5;
+      animation: toast-in .24s ease-out both;
+    }
+    .toast.error { border-color: #f0d0cb; color: #894c42; }
+    .toast-icon { flex: 0 0 auto; font-size: 16px; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 1120px) {
+      .page-shell { padding-right: 22px; padding-left: 22px; }
+      .layout { grid-template-columns: minmax(235px, .84fr) minmax(380px, 1.2fr); grid-template-areas: "orders workshop" "side side"; }
+      .right-column { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+      .event-panel { min-height: 100%; }
+    }
+    @media (max-width: 700px) {
+      .page-shell { padding: 14px 14px 25px; }
+      .topbar { flex-wrap: wrap; gap: 12px; padding: 3px 0 17px; }
+      .brand { min-width: 0; flex: 1; }
+      h1 { font-size: 20px; }
+      .brand-mark { width: 45px; height: 45px; border-radius: 15px; }
+      .brand-mark svg { width: 35px; }
+      .level-box { order: 3; width: 100%; }
+      .top-actions { margin-left: auto; }
+      .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "orders" "workshop" "side"; gap: 14px; }
+      .right-column { grid-template-columns: minmax(0, 1fr); }
+      .panel-pad, .workshop-panel { padding: 17px; }
+      .order-inner { padding: 18px; }
+      .order-card:before { width: 120px; height: 110px; }
+      .weather-note { padding: 12px 14px; }
+      .machine-scene { min-height: 158px; }
+      .production-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 9px; }
+      .quantity-box { gap: 4px; padding-right: 5px; padding-left: 5px; }
+      .quantity-label { padding-left: 2px; font-size: 9px; }
+      .step-button { width: 34px; height: 36px; }
+      .footer-note { padding-top: 18px; font-size: 9px; }
+      .toast-region { right: 16px; bottom: 16px; }
+      .page-shell { padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: max(25px, env(safe-area-inset-bottom)); }
+      .top-actions { flex-wrap: wrap; justify-content: flex-end; }
+      .step-button { width: 44px; height: 44px; }
+      .upgrade-button { min-height: 44px; }
+      .dialog-close { width: 44px; height: 44px; }
+      .secondary-button, .danger-button { min-height: 44px; }
+      .banner-button, .intro-dismiss { min-height: 44px; }
+    }
+    @media (max-width: 380px) {
+      .page-shell { padding-right: 10px; padding-left: 10px; }
+      .coin-pill { gap: 6px; padding: 0 10px; }
+      .cloud-grid { gap: 6px; }
+      .cloud-option { min-height: 100px; padding-right: 7px; padding-left: 7px; }
+      .cloud-option.selected { padding-right: 6px; padding-left: 6px; }
+      .cloud-option svg.cloud-icon { width: 35px; }
+      .quantity-label { max-width: 36px; line-height: 1.3; }
+      .topbar { align-items: center; }
+      .top-actions { width: 100%; }
+      .production-controls { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 80 64" fill="none">
+            <path d="M19 48C10.8 48 5 42.3 5 34.8c0-7.6 6.2-13.6 14.2-13.6 2-10.6 11-17.9 21.9-17.9 10.5 0 19.3 6.8 21.6 16.4C72.2 19.7 78 25.6 78 33.3c0 8.4-6.3 14.7-15 14.7H19Z" fill="#fff" stroke="#81B7D7" stroke-width="3"/>
+            <path d="m35 27-5 12h9l-3 10 13-16h-9l4-6H35Z" fill="#F4C85C"/>
+            <circle cx="17" cy="55" r="2.5" fill="#84CDB1"/><circle cx="64" cy="56" r="2" fill="#D9A5C4"/>
+          </svg>
+        </div>
+        <div>
+          <p class="brand-kicker">작고 포근한 날씨 공방</p>
+          <h1>구름 공장</h1>
+        </div>
+      </div>
+
+      <div class="level-box" aria-label="공장 레벨과 경험치">
+        <div class="level-badge" id="levelBadge">Lv.1</div>
+        <div class="level-info">
+          <div class="level-line"><span class="level-name">공장 성장</span><span class="xp-copy" id="xpCopy">0 / 30 XP</span></div>
+          <div class="xp-track" role="progressbar" id="xpProgress" aria-label="다음 레벨까지 경험치" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><div class="xp-fill" id="xpFill"></div></div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="install-button" id="installButton" type="button" hidden><span aria-hidden="true">⬇</span> 앱 설치</button>
+        <div class="coin-pill" aria-label="보유 코인">
+          <span class="coin-icon" aria-hidden="true">✦</span><strong id="coinCount">20</strong><span>코인</span>
+        </div>
+        <button class="icon-button" id="settingsButton" type="button" aria-label="설정 열기" title="설정">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" stroke="currentColor" stroke-width="1.8"/><path d="m19.1 13.7 1.3 1-1.5 2.6-1.6-.6a7.6 7.6 0 0 1-1.5.9l-.3 1.7h-3l-.3-1.7a7.6 7.6 0 0 1-1.5-.9l-1.6.6-1.5-2.6 1.3-1a7.8 7.8 0 0 1 0-1.8l-1.3-1 1.5-2.6 1.6.6a7.6 7.6 0 0 1 1.5-.9l.3-1.7h3l.3 1.7a7.6 7.6 0 0 1 1.5.9l1.6-.6 1.5 2.6-1.3 1a7.8 7.8 0 0 1 0 1.8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="left-column" aria-label="주문과 안내">
+        <div class="save-banner" id="saveBanner" hidden role="status">
+          <span class="banner-mark" id="saveBannerMark" aria-hidden="true">☁</span>
+          <div class="banner-copy"><span id="saveBannerText"></span><div class="banner-actions" id="saveBannerActions"></div></div>
+        </div>
+
+        <section class="intro-card" id="introCard" aria-labelledby="introTitle" hidden>
+          <h2 class="intro-title" id="introTitle"><span class="sparkle" aria-hidden="true">✦</span> 첫 주문을 시작해 봐요</h2>
+          <p class="intro-text">주문에 필요한 구름을 만들고 납품하면 코인과 경험치를 받아요. 맑은 구름 두 개부터 만들어 볼까요?</p>
+          <button class="intro-dismiss" id="dismissIntro" type="button">좋아요, 시작할게요</button>
+        </section>
+
+        <section class="order-card" id="orderCard" aria-labelledby="orderTitle">
+          <div class="order-inner" id="orderContent"></div>
+        </section>
+
+        <aside class="weather-note" aria-label="공장 날씨 안내">
+          <div class="weather-sun" aria-hidden="true">☼</div>
+          <div><strong>오늘도 포근한 하늘이에요</strong><span>특별한 바람이 불면 생산 작업대에서 알려드릴게요.</span></div>
+        </aside>
+      </section>
+
+      <section class="center-column" aria-label="생산 작업대와 창고">
+        <section class="panel workshop-panel" aria-labelledby="workshopTitle">
+          <div class="section-head workshop-head">
+            <div><span class="eyebrow">CLOUD WORKSHOP</span><h2 class="section-heading" id="workshopTitle" style="margin-top:4px">구름 생산 작업대</h2><p class="section-subtitle">구름을 고르고 수량을 정해 생산을 시작하세요.</p></div>
+            <span class="workshop-status" id="workshopStatus"><span class="status-dot" aria-hidden="true"></span><span id="workshopStatusText">작업 준비 완료</span></span>
+          </div>
+
+          <div class="machine-scene" aria-hidden="true">
+            <svg class="scene-cloud" viewBox="0 0 100 82" fill="none"><path d="M22 61C13 61 8 55 8 47c0-8 6-14 15-14 2-12 12-20 25-20 12 0 22 8 25 19 11-1 19 6 19 16 0 8-6 13-15 13H22Z" fill="#fff" stroke="#b4d7ea" stroke-width="2"/></svg>
+            <svg class="scene-cloud two" viewBox="0 0 100 82" fill="none"><path d="M22 61C13 61 8 55 8 47c0-8 6-14 15-14 2-12 12-20 25-20 12 0 22 8 25 19 11-1 19 6 19 16 0 8-6 13-15 13H22Z" fill="#fff" stroke="#b4d7ea" stroke-width="2"/></svg>
+            <svg class="machine-svg" viewBox="0 0 420 220" fill="none">
+              <ellipse cx="211" cy="195" rx="133" ry="12" fill="#CFE6E1"/>
+              <path d="M111 106h205v75c0 8-6 14-14 14H125c-8 0-14-6-14-14v-75Z" fill="#F6E6C7" stroke="#BB9D68" stroke-width="4"/>
+              <path d="M126 118h174v48c0 7-5 12-12 12H138c-7 0-12-5-12-12v-48Z" fill="#DFF3F6" stroke="#BB9D68" stroke-width="3"/>
+              <path d="M151 160h127" stroke="#9AC7CF" stroke-width="4" stroke-linecap="round"/>
+              <path d="M170 179v16m87-16v16" stroke="#9D8254" stroke-width="6" stroke-linecap="round"/>
+              <path d="M92 103h242" stroke="#AD8E57" stroke-width="9" stroke-linecap="round"/>
+              <path d="M190 101V75h46v26" fill="#F5D58D" stroke="#AD8E57" stroke-width="4"/>
+              <path d="M199 74c0-11 8-18 18-18 10 0 18 7 18 17" stroke="#AD8E57" stroke-width="4" stroke-linecap="round"/>
+              <g class="machine-cloud">
+                <path d="M180 68c-10 0-17-7-17-16s7-17 17-17c2-14 13-24 28-24 14 0 25 9 28 22 12-1 22 7 22 18 0 10-8 17-18 17h-60Z" fill="#fff" stroke="#8DBBD5" stroke-width="4"/>
+                <circle class="scene-spark" cx="193" cy="44" r="3" fill="#F3C751"/><circle cx="221" cy="53" r="2.5" fill="#F2A9BE"/>
+              </g>
+              <path d="m152 111-7 9m120-9 7 9" stroke="#6AB8A1" stroke-width="4" stroke-linecap="round"/>
+              <path d="M319 103V64" stroke="#8DAE8C" stroke-width="4" stroke-linecap="round"/>
+              <g class="windmill" fill="#ECA9A3" stroke="#B97572" stroke-width="2">
+                <path d="M319 63c-2-14 0-23 5-26 6 0 8 11 2 27Z"/>
+                <path d="M320 63c14-2 23 0 26 5 0 6-11 8-27 2Z"/>
+                <path d="M320 64c2 14 0 23-5 26-6 0-8-11-2-27Z"/>
+                <path d="M319 64c-14 2-23 0-26-5 0-6 11-8 27-2Z"/>
+                <circle cx="319" cy="64" r="5" fill="#F8D98D"/>
+              </g>
+              <circle cx="110" cy="80" r="4" fill="#EEC66C"/><path d="M103 65v-7m14 11 5-5" stroke="#EEC66C" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="cloud-grid" id="cloudGrid" role="group" aria-label="생산할 구름 선택"></div>
+          <div class="recipe-strip" id="recipeStrip"></div>
+          <div class="production-controls">
+            <div class="quantity-box" aria-label="생산 수량 조절">
+              <span class="quantity-label">만들 수량</span>
+              <div class="quantity-actions">
+                <button class="step-button" id="qtyMinus" type="button" aria-label="생산 수량 줄이기">−</button>
+                <output class="quantity-value" id="qtyValue" aria-live="polite">2</output>
+                <button class="step-button" id="qtyPlus" type="button" aria-label="생산 수량 늘리기">+</button>
+              </div>
+            </div>
+            <button class="start-button" id="startProduction" type="button"><span class="start-icon" aria-hidden="true">✦</span>생산 시작</button>
+          </div>
+          <p class="production-hint" id="productionHint"></p>
+
+          <div class="active-batch" id="activeBatch" hidden>
+            <div class="batch-heading">
+              <div class="batch-name" id="batchName"></div>
+              <span class="batch-time" id="batchTime" aria-hidden="true">00:12</span>
+            </div>
+            <div class="batch-track" role="progressbar" id="batchProgress" aria-label="구름 생산 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="batch-fill" id="batchFill"></div></div>
+            <p class="batch-note" id="batchNote"></p>
+          </div>
+        </section>
+
+        <section class="panel inventory-panel" id="inventory-panel" aria-labelledby="inventoryTitle">
+          <div class="section-head">
+            <div><span class="eyebrow">CLOUD STORAGE</span><h2 class="section-heading" id="inventoryTitle" style="margin-top:4px">구름 창고</h2><p class="section-subtitle">완성된 구름은 여기에 차곡차곡 모여요.</p></div>
+            <span class="storage-count" id="storageCount">0 / 6</span>
+          </div>
+          <div class="storage-track" role="progressbar" id="storageProgress" aria-label="창고 사용량" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div class="storage-fill" id="storageFill"></div></div>
+          <div class="inventory-list" id="inventoryList"></div>
+          <p class="reserved-note" id="reservedNote"></p>
+        </section>
+      </section>
+
+      <aside class="right-column" aria-label="업그레이드와 이벤트">
+        <section class="panel upgrade-panel" aria-labelledby="upgradeTitle">
+          <div class="section-head">
+            <div><span class="eyebrow">LITTLE IMPROVEMENTS</span><h2 class="section-heading" id="upgradeTitle" style="margin-top:4px">공장 업그레이드</h2><p class="section-subtitle">납품 보상으로 공장을 더 야무지게!</p></div>
+          </div>
+          <div class="upgrade-list" id="upgradeList"></div>
+        </section>
+
+        <section class="panel event-panel" aria-labelledby="eventTitle">
+          <div class="section-head" style="margin-bottom:11px">
+            <div><span class="eyebrow">A LITTLE WEATHER</span><h2 class="section-heading" id="eventTitle" style="margin-top:4px">공장에 분 바람</h2></div>
+            <span class="tiny-pill">최근 5개</span>
+          </div>
+          <div class="event-list" id="eventList" aria-live="polite"></div>
+          <p class="event-footnote">가끔 특별한 바람이 생산을 도와줘요. 나쁜 이벤트나 자원 손실은 없답니다.</p>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="footer-note"><span aria-hidden="true">✿</span> 이 공장의 이야기는 이 브라우저 안에만 저장돼요.</footer>
+  </div>
+
+  <dialog id="settingsDialog" aria-labelledby="settingsTitle">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div><span class="eyebrow">FACTORY SETTINGS</span><h2 class="dialog-title" id="settingsTitle" style="margin-top:5px">공장 설정</h2></div>
+        <button class="dialog-close" type="button" data-close-settings aria-label="설정 닫기">×</button>
+      </div>
+      <p class="dialog-description">공장 진행은 이 브라우저의 로컬 저장소에 자동으로 보관돼요. 다른 기기와 진행이 공유되지는 않아요.</p>
+      <div class="storage-status-card" id="settingsStorageStatus"></div>
+      <div class="install-help">
+        <strong>휴대폰에서 앱처럼 실행하기</strong>
+        <p>안드로이드와 데스크톱은 상단의 앱 설치 버튼 또는 브라우저 메뉴에서 설치할 수 있어요. iPhone/iPad는 Safari의 공유 버튼을 누른 뒤 “홈 화면에 추가”를 선택하세요.<span class="install-state" id="installState"></span></p>
+      </div>
+      <button class="install-button" id="installFromSettings" type="button" hidden><span aria-hidden="true">⬇</span> 앱 설치</button>
+      <div class="dialog-actions"><button class="danger-button" id="openReset" type="button">새 공장 시작</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="resetDialog" aria-labelledby="resetTitle">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div><span class="eyebrow">START OVER</span><h2 class="dialog-title" id="resetTitle" style="margin-top:5px">새 공장을 시작할까요?</h2></div>
+        <button class="dialog-close" type="button" data-close-reset aria-label="초기화 확인 닫기">×</button>
+      </div>
+      <p class="dialog-description">현재 코인, 구름, 주문, 업그레이드가 모두 초기화돼요. 새 공장은 코인 20개와 첫 공원 주문으로 시작합니다.</p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="cancelReset" type="button">계속 운영하기</button>
+        <button class="danger-button" id="confirmReset" type="button">초기화하고 시작</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="blockedDialog" class="blocked-dialog" aria-labelledby="blockedTitle">
+    <div class="dialog-inner">
+      <div class="blocked-icon" aria-hidden="true">!</div>
+      <h2 class="dialog-title" id="blockedTitle">저장 데이터를 열 수 없어요</h2>
+      <p class="dialog-description" id="blockedMessage"></p>
+      <div class="dialog-actions"><button class="danger-button" id="blockedReset" type="button">저장 데이터를 버리고 새 공장 시작</button></div>
+    </div>
+  </dialog>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-relevant="additions text"></div>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const SAVE_KEY = "cloud-factory-save-v1";
+      const BACKUP_KEY = "cloud-factory-backup-v1";
+      const SCHEMA_VERSION = 1;
+      const CLOUDS = {
+        clear: { id: "clear", name: "맑은 구름", recipe: "수증기 + 햇살", seconds: 8, value: 10, description: "공원과 들판에 포근한 맑은 날을 만들어요.", unlock: 1 },
+        shower: { id: "shower", name: "소나기 구름", recipe: "수증기 + 산들바람", seconds: 12, value: 14, description: "식물과 정원에 시원한 비를 내려요.", unlock: 1 },
+        heart: { id: "heart", name: "하트 구름", recipe: "수증기 + 햇살 + 산들바람", seconds: 16, value: 18, description: "축하하는 하늘에 사랑을 보내요.", unlock: 2 }
+      };
+      const DESTINATIONS = {
+        "공원": "공원에 보낼",
+        "등대": "등대에 보낼",
+        "꽃집": "꽃집에 보낼",
+        "풍차": "풍차 마을에 보낼"
+      };
+      const SPEED_COSTS = [35, 70, 120];
+      const STORAGE_COSTS = [40, 90];
+      const STORAGE_BASE = 6;
+      const STORAGE_PER_LEVEL = 3;
+      const MAX_BATCH = 3;
+
+      let state = createInitialState();
+      let selectedCloud = "clear";
+      let selectedQuantity = 2;
+      let storageMode = "ok";
+      let saveBlocked = false;
+      let blockedReason = "";
+      let lastTickSecond = -1;
+      let toastCounter = 0;
+      let deferredInstallPrompt = null;
+
+      const $ = function (id) { return document.getElementById(id); };
+      const settingsDialog = $("settingsDialog");
+      const resetDialog = $("resetDialog");
+      const blockedDialog = $("blockedDialog");
+
+      function createInitialState() {
+        return {
+          schemaVersion: SCHEMA_VERSION,
+          coins: 20,
+          xp: 0,
+          upgrades: { speedLevel: 0, storageLevel: 0 },
+          inventory: [],
+          activeBatch: null,
+          order: { id: makeId("order"), destination: "공원", cloudId: "clear", quantity: 2, rewardCoins: 25, firstOrder: true },
+          completedOrderCount: 0,
+          tutorialDismissed: false,
+          eventHistory: []
+        };
+      }
+
+      function makeId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") return prefix + "-" + window.crypto.randomUUID();
+        return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
+      }
+
+      function storageCapacity() {
+        return STORAGE_BASE + state.upgrades.storageLevel * STORAGE_PER_LEVEL;
+      }
+
+      function levelInfo(xp) {
+        if (xp < 30) return { level: 1, floor: 0, next: 30 };
+        if (xp < 75) return { level: 2, floor: 30, next: 75 };
+        if (xp < 135) return { level: 3, floor: 75, next: 135 };
+        const level = 4 + Math.floor((xp - 135) / 60);
+        const floor = 135 + (level - 4) * 60;
+        return { level: level, floor: floor, next: floor + 60 };
+      }
+
+      function isCloudUnlocked(cloudId, xp) {
+        const cloud = CLOUDS[cloudId];
+        return Boolean(cloud && levelInfo(xp).level >= cloud.unlock);
+      }
+
+      function isIntegerInRange(value, min, max) {
+        return Number.isInteger(value) && value >= min && (max === undefined || value <= max);
+      }
+
+      function validateState(data) {
+        if (!data || typeof data !== "object" || Array.isArray(data)) return false;
+        if (data.schemaVersion !== SCHEMA_VERSION) return false;
+        if (!isIntegerInRange(data.coins, 0) || !isIntegerInRange(data.xp, 0)) return false;
+        if (!data.upgrades || !isIntegerInRange(data.upgrades.speedLevel, 0, 3) || !isIntegerInRange(data.upgrades.storageLevel, 0, 2)) return false;
+        if (!Array.isArray(data.inventory) || !Array.isArray(data.eventHistory)) return false;
+        if (!isIntegerInRange(data.completedOrderCount, 0) || typeof data.tutorialDismissed !== "boolean") return false;
+        const capacity = STORAGE_BASE + data.upgrades.storageLevel * STORAGE_PER_LEVEL;
+        if (data.inventory.length > capacity) return false;
+        const itemIds = new Set();
+        for (const item of data.inventory) {
+          if (!item || typeof item.id !== "string" || itemIds.has(item.id) || !CLOUDS[item.cloudId]) return false;
+          if (!isCloudUnlocked(item.cloudId, data.xp)) return false;
+          if (item.quality !== "standard" && item.quality !== "shiny") return false;
+          itemIds.add(item.id);
+        }
+        if (!data.order || typeof data.order.id !== "string" || typeof data.order.firstOrder !== "boolean" || !Object.prototype.hasOwnProperty.call(DESTINATIONS, data.order.destination)) return false;
+        if (!CLOUDS[data.order.cloudId] || !isCloudUnlocked(data.order.cloudId, data.xp)) return false;
+        if (!isIntegerInRange(data.order.quantity, 2, 3) || !isIntegerInRange(data.order.rewardCoins, 0)) return false;
+        if (data.order.firstOrder && (data.completedOrderCount !== 0 || data.order.cloudId !== "clear" || data.order.quantity !== 2 || data.order.destination !== "공원" || data.order.rewardCoins !== 25)) return false;
+        if (data.activeBatch !== null) {
+          const batch = data.activeBatch;
+          if (!batch || typeof batch.id !== "string" || !CLOUDS[batch.cloudId] || !isCloudUnlocked(batch.cloudId, data.xp)) return false;
+          if (!isIntegerInRange(batch.quantity, 1, MAX_BATCH) || (batch.eventId !== null && batch.eventId !== "wind" && batch.eventId !== "rainbow")) return false;
+          if (!Number.isFinite(batch.startedAt) || !Number.isFinite(batch.completesAt) || batch.startedAt < 0 || batch.completesAt > 8640000000000000 || batch.completesAt <= batch.startedAt) return false;
+          if (!Number.isFinite(batch.durationMs) || batch.durationMs < 5000 || batch.completesAt - batch.startedAt !== batch.durationMs) return false;
+          if ((batch.eventId === "rainbow" && batch.quality !== "shiny") || (batch.eventId !== "rainbow" && batch.quality !== "standard")) return false;
+          if (data.inventory.length + batch.quantity > capacity) return false;
+        }
+        if (data.eventHistory.length > 5) return false;
+        for (const event of data.eventHistory) {
+          if (!event || (event.eventId !== "wind" && event.eventId !== "rainbow") || !CLOUDS[event.cloudId]) return false;
+          if (!Number.isFinite(event.createdAt) || event.createdAt < 0 || event.createdAt > 8640000000000000 || !isIntegerInRange(event.quantity, 1, MAX_BATCH)) return false;
+          if (!Number.isFinite(event.createdAt) || !isIntegerInRange(event.quantity, 1, MAX_BATCH)) return false;
+        }
+        return true;
+      }
+
+      function inspectSnapshot(raw) {
+        if (typeof raw !== "string") return { status: "missing" };
+        let data;
+        try { data = JSON.parse(raw); } catch (error) { return { status: "invalid" }; }
+        if (data && typeof data === "object" && Number.isInteger(data.schemaVersion) && data.schemaVersion > SCHEMA_VERSION) {
+          return { status: "future", data: data };
+        }
+        if (!validateState(data)) return { status: "invalid" };
+        return { status: "valid", data: data };
+      }
+
+      function loadState() {
+        let mainRaw;
+        let backupRaw;
+        try {
+          mainRaw = localStorage.getItem(SAVE_KEY);
+          backupRaw = localStorage.getItem(BACKUP_KEY);
+        } catch (error) {
+          state = createInitialState();
+          storageMode = "memory";
+          return;
+        }
+
+        const main = inspectSnapshot(mainRaw);
+        const backup = inspectSnapshot(backupRaw);
+
+        if (main.status === "future") {
+          state = createInitialState();
+          saveBlocked = true;
+          blockedReason = "이 저장 데이터는 현재 게임보다 새 버전에서 만들어졌어요. 기존 진행을 보호하기 위해 덮어쓰지 않았습니다. 새 공장을 시작하면 이 브라우저의 기존 저장 데이터가 삭제됩니다.";
+          return;
+        }
+
+        if (main.status === "valid") {
+          state = main.data;
+          return;
+        }
+
+        if (backup.status === "future") {
+          state = createInitialState();
+          saveBlocked = true;
+          blockedReason = "자동 백업이 현재 게임보다 새 버전에서 만들어졌어요. 기존 진행을 보호하기 위해 덮어쓰지 않았습니다. 새 공장을 시작하면 이 브라우저의 기존 저장 데이터가 삭제됩니다.";
+          return;
+        }
+
+        if (backup.status === "valid") {
+          state = backup.data;
+          storageMode = "recovered";
+          persistState();
+          return;
+        }
+
+        if (main.status === "invalid" || backup.status === "invalid") {
+          state = createInitialState();
+          saveBlocked = true;
+          blockedReason = "저장 데이터와 자동 백업을 읽을 수 없어요. 진행 데이터를 조용히 지우지 않도록 공장을 잠시 멈췄습니다. 아래 버튼을 선택하면 저장 데이터를 지우고 새 공장을 시작합니다.";
+          return;
+        }
+
+        state = createInitialState();
+      }
+
+      function persistState() {
+        if (saveBlocked || storageMode === "memory") return false;
+        let oldValidRaw = null;
+        try {
+          const previous = localStorage.getItem(SAVE_KEY);
+          if (inspectSnapshot(previous).status === "valid") oldValidRaw = previous;
+          localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+          if (oldValidRaw !== null) {
+            localStorage.setItem(BACKUP_KEY, oldValidRaw);
+          } else {
+            const oldBackup = localStorage.getItem(BACKUP_KEY);
+            if (inspectSnapshot(oldBackup).status !== "valid") localStorage.setItem(BACKUP_KEY, JSON.stringify(state));
+          }
+          if (storageMode !== "recovered") storageMode = "ok";
+          updateSaveBanner();
+          return true;
+        } catch (error) {
+          storageMode = "error";
+          updateSaveBanner();
+          return false;
+        }
+      }
+
+      function commit() {
+        persistState();
+        renderAll();
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (character) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character];
+        });
+      }
+
+      function cloudSvg(cloudId, extraClass) {
+        const cls = extraClass ? ' class="' + extraClass + '"' : "";
+        if (cloudId === "shower") {
+          return '<svg' + cls + ' viewBox="0 0 100 82" fill="none" aria-hidden="true"><path d="M22 53C13 53 8 47 8 39c0-8 6-14 15-14 2-12 12-20 25-20 12 0 22 8 25 19 11-1 19 6 19 16 0 8-6 13-15 13H22Z" fill="#B8D8E8" stroke="#78A8C1" stroke-width="3"/><path d="m28 59-5 11m24-11-5 11m24-11-5 11" stroke="#62A7D6" stroke-width="4" stroke-linecap="round"/></svg>';
+        }
+        if (cloudId === "heart") {
+          return '<svg' + cls + ' viewBox="0 0 100 82" fill="none" aria-hidden="true"><path d="M22 59C13 59 8 53 8 45c0-8 6-14 15-14 2-12 12-20 25-20 12 0 22 8 25 19 11-1 19 6 19 16 0 8-6 13-15 13H22Z" fill="#fff" stroke="#A8C5D8" stroke-width="3"/><path d="M49 54s-15-9-15-18c0-7 10-10 15-2 5-8 15-5 15 2 0 9-15 18-15 18Z" fill="#EE9FB8"/><path d="M18 16 14 11m67 3 4-5" stroke="#F0C45F" stroke-width="3" stroke-linecap="round"/></svg>';
+        }
+        return '<svg' + cls + ' viewBox="0 0 100 82" fill="none" aria-hidden="true"><circle cx="76" cy="20" r="11" fill="#FFD66F"/><path d="M22 61C13 61 8 55 8 47c0-8 6-14 15-14 2-12 12-20 25-20 12 0 22 8 25 19 11-1 19 6 19 16 0 8-6 13-15 13H22Z" fill="#fff" stroke="#98BED7" stroke-width="3"/><path d="m37 28 2-4m29 2 2-4" stroke="#F2C459" stroke-width="3" stroke-linecap="round"/></svg>';
+      }
+
+      function freeStorage() {
+        return Math.max(0, storageCapacity() - state.inventory.length - (state.activeBatch ? state.activeBatch.quantity : 0));
+      }
+
+      function countCloud(cloudId) {
+        return state.inventory.filter(function (item) { return item.cloudId === cloudId; }).length;
+      }
+
+      function countShiny(cloudId) {
+        return state.inventory.filter(function (item) { return item.cloudId === cloudId && item.quality === "shiny"; }).length;
+      }
+
+      function defaultQuantity() {
+        const free = Math.min(MAX_BATCH, freeStorage());
+        if (free < 1) return 1;
+        if (state.order && state.order.cloudId === selectedCloud) {
+          const missing = Math.max(1, state.order.quantity - countCloud(selectedCloud));
+          return Math.max(1, Math.min(free, missing));
+        }
+        return 1;
+      }
+
+      function maxSelectedQuantity() {
+        return Math.min(MAX_BATCH, freeStorage());
+      }
+
+      function formatCoins(value) {
+        return new Intl.NumberFormat("ko-KR").format(value);
+      }
+
+      function formatDuration(seconds) {
+        const safe = Math.max(0, Math.ceil(seconds));
+        const minutes = Math.floor(safe / 60);
+        const remainder = safe % 60;
+        return minutes > 0 ? String(minutes).padStart(2, "0") + ":" + String(remainder).padStart(2, "0") : "00:" + String(remainder).padStart(2, "0");
+      }
+
+      function formatEventTime(timestamp) {
+        try {
+          return new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+        } catch (error) {
+          return "";
+        }
+      }
+
+      function formatEventIso(timestamp) {
+        const date = new Date(timestamp);
+        return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+      }
+
+      function orderBaseReward(order) {
+        return order.rewardCoins;
+      }
+
+      function renderHeader() {
+        const info = levelInfo(state.xp);
+        const progress = Math.max(0, Math.min(100, ((state.xp - info.floor) / (info.next - info.floor)) * 100));
+        $("levelBadge").textContent = "Lv." + info.level;
+        $("xpCopy").textContent = formatCoins(state.xp) + " / " + formatCoins(info.next) + " XP";
+        $("xpFill").style.width = progress + "%";
+        $("xpProgress").setAttribute("aria-valuemax", String(info.next - info.floor));
+        $("xpProgress").setAttribute("aria-valuenow", String(Math.max(0, state.xp - info.floor)));
+        $("coinCount").textContent = formatCoins(state.coins);
+      }
+
+      function renderOrder() {
+        const order = state.order;
+        const cloud = CLOUDS[order.cloudId];
+        const inStock = countCloud(order.cloudId);
+        const canDeliver = inStock >= order.quantity;
+        const shiny = Math.min(order.quantity, countShiny(order.cloudId));
+        const progressCount = Math.min(order.quantity, inStock);
+        const progressSegments = Array.from({ length: order.quantity }, function (_, index) {
+          return '<span class="' + (index < progressCount ? "filled" : "") + '"></span>';
+        }).join("");
+        const orderNumber = String(state.completedOrderCount + 1).padStart(3, "0");
+        const title = DESTINATIONS[order.destination] + " " + cloud.name + " " + order.quantity + "개를 만들어 주세요.";
+        const bonusText = shiny > 0 ? "현재 반짝 구름 보너스 최대 +" + (shiny * 2) + "코인" : "반짝 구름 1개당 추가 +2코인";
+        const buttonText = canDeliver ? order.destination + "에 납품하기" : "구름을 더 만들어 주세요";
+        $("orderContent").innerHTML =
+          '<div class="order-top"><span class="order-number">DELIVERY NOTE #' + orderNumber + '</span><span class="order-stamp" aria-hidden="true">✉</span></div>' +
+          '<p class="order-destination">' + escapeHtml(order.destination) + ' 의뢰</p>' +
+          '<h2 class="order-title" id="orderTitle">' + escapeHtml(title) + '</h2>' +
+          '<div class="order-art">' + cloudSvg(order.cloudId, "cloud-icon") + '</div>' +
+          '<div class="order-count-row"><span>창고 준비 수량</span><strong>' + Math.min(inStock, order.quantity) + ' / ' + order.quantity + '개</strong></div>' +
+          '<div class="order-progress" aria-hidden="true">' + progressSegments + '</div>' +
+          '<div class="reward-box"><span class="reward-label">납품 보상</span><span><span class="reward-value">✦ ' + formatCoins(orderBaseReward(order)) + ' 코인</span><span class="reward-bonus">' + bonusText + '</span></span></div>' +
+          '<button class="primary-button" id="deliverOrder" type="button" ' + (canDeliver ? "" : "disabled") + ' aria-describedby="orderHint"><span aria-hidden="true">✈</span>' + escapeHtml(buttonText) + '</button>' +
+          '<p class="order-hint" id="orderHint">' + (canDeliver ? "준비가 끝났어요. 구름을 보내 볼까요?" : "기한은 없어요. 천천히 구름을 준비해 주세요.") + '</p>';
+      }
+
+      function renderCloudOptions() {
+        const currentLevel = levelInfo(state.xp).level;
+        const busy = Boolean(state.activeBatch);
+        $("cloudGrid").innerHTML = Object.keys(CLOUDS).map(function (cloudId) {
+          const cloud = CLOUDS[cloudId];
+          const unlocked = currentLevel >= cloud.unlock;
+          const chosen = selectedCloud === cloudId && unlocked;
+          const timeText = cloud.seconds + "초 / 개";
+          return '<button class="cloud-option ' + (chosen ? "selected " : "") + (unlocked ? "" : "locked") + '" type="button" data-cloud="' + cloud.id + '" ' +
+            (unlocked && !busy ? 'aria-pressed="' + (chosen ? "true" : "false") + '"' : 'disabled aria-label="' + escapeHtml(unlocked ? cloud.name + ", 생산 중에는 변경할 수 없음" : cloud.name + ", 레벨 " + cloud.unlock + " 해금") + '"') + '>' +
+            '<span class="cloud-option-top">' + cloudSvg(cloud.id, "cloud-icon") + (unlocked ? '<span class="selected-mark" aria-hidden="true">' + (chosen ? "✓" : "") + '</span>' : '<span class="lock-mark" aria-hidden="true">🔒</span>') + '</span>' +
+            '<span class="cloud-option-name">' + escapeHtml(cloud.name) + '</span>' +
+            '<span class="cloud-option-meta ' + (unlocked ? "" : "lock-note") + '">' + (unlocked ? timeText : "레벨 " + cloud.unlock + " 해금") + '</span>' +
+            '</button>';
+        }).join("");
+
+        const cloud = CLOUDS[selectedCloud];
+        $("recipeStrip").innerHTML =
+          '<div class="recipe-copy"><div class="recipe-title">구름 레시피</div><div class="recipe-text">' + escapeHtml(cloud.recipe) + '</div></div>' +
+          '<span class="recipe-time">☁ ' + cloud.seconds + '초 / 개</span>';
+      }
+
+      function renderProduction() {
+        const isBusy = Boolean(state.activeBatch);
+        const capacityAvailable = maxSelectedQuantity();
+        const unlocked = isCloudUnlocked(selectedCloud, state.xp);
+        if (selectedQuantity > Math.max(1, capacityAvailable)) selectedQuantity = Math.max(1, capacityAvailable);
+        $("qtyValue").textContent = String(selectedQuantity);
+        $("qtyMinus").disabled = isBusy || selectedQuantity <= 1;
+        $("qtyPlus").disabled = isBusy || selectedQuantity >= capacityAvailable || capacityAvailable < 1;
+        $("startProduction").disabled = isBusy || capacityAvailable < 1 || !unlocked;
+        $("workshopStatus").classList.toggle("busy", isBusy);
+        $("workshopStatusText").textContent = isBusy ? "구름을 빚는 중" : "작업 준비 완료";
+
+        const hint = $("productionHint");
+        hint.classList.remove("warning");
+        if (isBusy) {
+          hint.textContent = "생산이 끝나면 구름이 창고에 자동으로 들어가요.";
+        } else if (!unlocked) {
+          hint.textContent = "레벨 " + CLOUDS[selectedCloud].unlock + "이 되면 생산할 수 있어요.";
+          hint.classList.add("warning");
+        } else if (capacityAvailable < 1) {
+          hint.textContent = "창고가 가득 찼어요. 주문을 납품하거나 창고를 확장해 주세요.";
+          hint.classList.add("warning");
+        } else {
+          hint.textContent = "주문 구름을 만들면 납품까지 한 번에 이어갈 수 있어요.";
+        }
+
+        $("activeBatch").hidden = !isBusy;
+        $("cloudGrid").setAttribute("aria-disabled", String(isBusy));
+        if (isBusy) {
+          const batch = state.activeBatch;
+          const cloud = CLOUDS[batch.cloudId];
+          $("batchName").innerHTML = cloudSvg(batch.cloudId, "cloud-icon") + '<span>' + escapeHtml(cloud.name) + " " + batch.quantity + "개 생산 중" + (batch.quality === "shiny" ? ' <span class="tiny-pill green">반짝 품질</span>' : "") + '</span>';
+          $("batchNote").textContent = batch.eventId === "wind" ? "산들바람이 불어 이번 배치가 더 빨리 완성돼요." : batch.eventId === "rainbow" ? "무지개 햇살이 비쳐 반짝 구름으로 만들어지고 있어요." : "차분하게 구름을 빚고 있어요. 다른 화면을 둘러봐도 괜찮아요.";
+          updateBatchProgress();
+        }
+      }
+
+      function updateBatchProgress() {
+        if (!state.activeBatch) return;
+        const batch = state.activeBatch;
+        const now = Date.now();
+        const elapsed = Math.max(0, now - batch.startedAt);
+        const total = Math.max(1, batch.completesAt - batch.startedAt);
+        const progress = Math.max(0, Math.min(100, (elapsed / total) * 100));
+        const remaining = Math.max(0, Math.ceil((batch.completesAt - now) / 1000));
+        $("batchFill").style.width = progress + "%";
+        $("batchTime").textContent = formatDuration(remaining);
+        $("batchProgress").setAttribute("aria-valuenow", String(Math.floor(progress)));
+        $("batchProgress").setAttribute("aria-valuetext", remaining + "초 남음");
+      }
+
+      function renderInventory() {
+        const capacity = storageCapacity();
+        const reserved = state.activeBatch ? state.activeBatch.quantity : 0;
+        const used = state.inventory.length + reserved;
+        $("storageCount").textContent = used + " / " + capacity;
+        $("storageProgress").setAttribute("aria-valuemax", String(capacity));
+        $("storageProgress").setAttribute("aria-valuenow", String(used));
+        $("storageFill").style.width = Math.min(100, (used / capacity) * 100) + "%";
+        $("reservedNote").textContent = reserved > 0 ? "생산 중인 구름 " + reserved + "개가 창고 공간을 예약했어요." : "창고 공간은 주문 없이 만든 구름에도 사용할 수 있어요.";
+
+        const rows = Object.keys(CLOUDS).map(function (cloudId) {
+          const items = state.inventory.filter(function (item) { return item.cloudId === cloudId; });
+          if (!items.length) return "";
+          const shinyCount = items.filter(function (item) { return item.quality === "shiny"; }).length;
+          const standardCount = items.length - shinyCount;
+          let qualityText = "";
+          if (shinyCount && standardCount) qualityText = "기본 " + standardCount + "개 · 반짝 " + shinyCount + "개";
+          else if (shinyCount) qualityText = "무지개 햇살 · 반짝 품질 " + shinyCount + "개";
+          else qualityText = "포근하게 완성했어요";
+          return '<div class="inventory-row">' + cloudSvg(cloudId, "cloud-icon") +
+            '<div class="inventory-copy"><span class="inventory-name">' + escapeHtml(CLOUDS[cloudId].name) + '</span><span class="inventory-quality">' + escapeHtml(qualityText) + '</span></div>' +
+            '<span class="inventory-quantity" aria-label="' + items.length + '개">' + items.length + '개</span></div>';
+        }).join("");
+
+        $("inventoryList").innerHTML = rows || '<div class="inventory-empty"><span class="empty-cloud" aria-hidden="true">☁</span>아직 구름이 없어요.<br>작업대에서 첫 구름을 만들어 보세요.<br><a href="#workshopTitle">작업대로 가기 ↓</a></div>';
+      }
+
+      function renderUpgrades() {
+        const speedLevel = state.upgrades.speedLevel;
+        const storageLevel = state.upgrades.storageLevel;
+        const speedCost = SPEED_COSTS[speedLevel];
+        const storageCost = STORAGE_COSTS[storageLevel];
+        const speedMax = speedLevel >= SPEED_COSTS.length;
+        const storageMax = storageLevel >= STORAGE_COSTS.length;
+        const speedDisabled = speedMax || state.coins < speedCost;
+        const storageDisabled = storageMax || state.coins < storageCost;
+        const speedEffect = speedMax ? "현재 생산 시간 45% 단축" : "생산 시간 레벨당 15% 단축";
+        const storageEffect = storageMax ? "창고 최대 12개" : "창고 공간 +3개";
+
+        $("upgradeList").innerHTML =
+          '<article class="upgrade-card"><div class="upgrade-top"><div class="upgrade-icon" aria-hidden="true">🌀</div><div class="upgrade-text"><h3 class="upgrade-name">회전 날개</h3><p class="upgrade-desc">바람개비 힘으로 구름을 더 빨리 만들어요.</p></div><span class="upgrade-level">Lv. ' + speedLevel + ' / 3</span></div><div class="upgrade-bottom"><span class="upgrade-effect">' + speedEffect + '</span>' +
+          (speedMax ? '<button class="upgrade-button maxed" type="button" disabled>최대 레벨</button>' : '<button class="upgrade-button" type="button" data-upgrade="speed" ' + (speedDisabled ? 'disabled title="코인이 부족해요"' : "") + '>✦ ' + speedCost + ' 코인</button>') +
+          '</div></article>' +
+          '<article class="upgrade-card storage"><div class="upgrade-top"><div class="upgrade-icon" aria-hidden="true">🧺</div><div class="upgrade-text"><h3 class="upgrade-name">구름 창고</h3><p class="upgrade-desc">구름을 더 많이 모아둘 수 있어요.</p></div><span class="upgrade-level">Lv. ' + storageLevel + ' / 2</span></div><div class="upgrade-bottom"><span class="upgrade-effect">' + storageEffect + '</span>' +
+          (storageMax ? '<button class="upgrade-button maxed" type="button" disabled>최대 레벨</button>' : '<button class="upgrade-button" type="button" data-upgrade="storage" ' + (storageDisabled ? 'disabled title="코인이 부족해요"' : "") + '>✦ ' + storageCost + ' 코인</button>') +
+          '</div></article>';
+      }
+
+      function renderEvents() {
+        if (!state.eventHistory.length) {
+          $("eventList").innerHTML = '<div class="event-empty">아직 특별한 바람은 없어요.<br>다음 생산에는 어떤 날씨가 찾아올까요?</div>';
+          return;
+        }
+        $("eventList").innerHTML = state.eventHistory.slice().reverse().map(function (event) {
+          const cloud = CLOUDS[event.cloudId];
+          const wind = event.eventId === "wind";
+          const title = wind ? "산들바람이 도와줬어요" : "무지개 햇살이 비쳤어요";
+          const description = wind ? cloud.name + " " + event.quantity + "개 배치가 25% 빨리 완성됐어요." : cloud.name + " " + event.quantity + "개가 반짝 품질을 얻었어요.";
+          return '<article class="event-item ' + (wind ? "wind" : "rainbow") + '"><span class="event-symbol" aria-hidden="true">' + (wind ? "🍃" : "🌈") + '</span><div class="event-copy"><h3 class="event-title">' + title + '</h3><p class="event-description">' + escapeHtml(description) + '</p><time class="event-time" datetime="' + formatEventIso(event.createdAt) + '">' + escapeHtml(formatEventTime(event.createdAt)) + '</time></div></article>';
+        }).join("");
+      }
+
+      function updateSaveBanner() {
+        const banner = $("saveBanner");
+        const mark = $("saveBannerMark");
+        const text = $("saveBannerText");
+        const actions = $("saveBannerActions");
+        if (storageMode === "ok") {
+          banner.hidden = true;
+          return;
+        }
+        banner.hidden = false;
+        banner.classList.toggle("error", storageMode === "memory" || storageMode === "error");
+        actions.innerHTML = "";
+        if (storageMode === "memory") {
+          mark.textContent = "!";
+          text.textContent = "이 브라우저에서 저장소를 사용할 수 없어요. 이 탭을 닫으면 진행이 사라질 수 있어요.";
+          actions.innerHTML = '<button class="banner-button" type="button" id="retrySave">저장 다시 확인</button>';
+        } else if (storageMode === "error") {
+          mark.textContent = "!";
+          text.textContent = "브라우저 저장 공간에 기록하지 못했어요. 현재 탭에서는 계속 플레이할 수 있어요.";
+          actions.innerHTML = '<button class="banner-button" type="button" id="retrySave">저장 다시 시도</button>';
+        } else {
+          mark.textContent = "✓";
+          text.textContent = "메인 저장을 읽을 수 없어 이전 자동 백업에서 진행을 복구했어요.";
+        }
+      }
+
+      function renderAll() {
+        renderHeader();
+        renderOrder();
+        renderCloudOptions();
+        renderProduction();
+        renderInventory();
+        renderUpgrades();
+        renderEvents();
+        $("introCard").hidden = state.tutorialDismissed || state.completedOrderCount > 0 || saveBlocked;
+        updateSaveBanner();
+        if (settingsDialog.open) updateSettingsStatus();
+      }
+
+      function showToast(message, kind) {
+        const item = document.createElement("div");
+        item.className = "toast" + (kind === "error" ? " error" : "");
+        item.setAttribute("role", "status");
+        item.innerHTML = '<span class="toast-icon" aria-hidden="true">' + (kind === "error" ? "!" : "✦") + '</span><span>' + escapeHtml(message) + '</span>';
+        $("toastRegion").appendChild(item);
+        $("announcement").textContent = message;
+        const id = ++toastCounter;
+        window.setTimeout(function () {
+          if (item.parentNode) item.parentNode.removeChild(item);
+          if (id === toastCounter) $("announcement").textContent = "";
+        }, 3600);
+      }
+
+      function dismissTutorial() {
+        state.tutorialDismissed = true;
+        commit();
+      }
+
+      function selectCloud(cloudId) {
+        if (!CLOUDS[cloudId] || !isCloudUnlocked(cloudId, state.xp) || state.activeBatch) return;
+        selectedCloud = cloudId;
+        selectedQuantity = defaultQuantity();
+        renderAll();
+      }
+
+      function calculateDuration(cloudId, quantity, speedLevel, eventId) {
+        const unit = CLOUDS[cloudId].seconds;
+        const base = unit + (quantity - 1) * Math.ceil(unit / 2);
+        let adjusted = Math.max(5, Math.ceil(base * (1 - 0.15 * speedLevel)));
+        if (eventId === "wind") adjusted = Math.max(5, Math.ceil(adjusted * 0.75));
+        return adjusted;
+      }
+
+      function startProduction() {
+        if (saveBlocked || state.activeBatch || !isCloudUnlocked(selectedCloud, state.xp)) return;
+        const maxQty = maxSelectedQuantity();
+        if (maxQty < 1) {
+          showToast("창고가 가득 찼어요. 납품하거나 창고를 확장해 주세요.", "error");
+          return;
+        }
+        selectedQuantity = Math.max(1, Math.min(selectedQuantity, maxQty, MAX_BATCH));
+        const roll = Math.random();
+        let eventId = null;
+        if (roll < 0.1) eventId = "wind";
+        else if (roll < 0.2) eventId = "rainbow";
+        const durationSeconds = calculateDuration(selectedCloud, selectedQuantity, state.upgrades.speedLevel, eventId);
+        const startedAt = Date.now();
+        state.activeBatch = {
+          id: makeId("batch"),
+          cloudId: selectedCloud,
+          quantity: selectedQuantity,
+          startedAt: startedAt,
+          completesAt: startedAt + durationSeconds * 1000,
+          durationMs: durationSeconds * 1000,
+          eventId: eventId,
+          quality: eventId === "rainbow" ? "shiny" : "standard"
+        };
+        if (eventId) {
+          state.eventHistory.push({ eventId: eventId, cloudId: selectedCloud, quantity: selectedQuantity, createdAt: startedAt });
+          state.eventHistory = state.eventHistory.slice(-5);
+        }
+        persistState();
+        renderAll();
+        const cloudName = CLOUDS[selectedCloud].name;
+        if (eventId === "wind") showToast("산들바람이 불어요! 이번 " + cloudName + " 생산이 더 빨라져요.");
+        else if (eventId === "rainbow") showToast("무지개 햇살이 비쳤어요! 이번 구름은 반짝 품질이에요.");
+        else showToast(cloudName + " " + selectedQuantity + "개 생산을 시작했어요. 이번엔 잔잔한 바람이에요.");
+      }
+
+      function completeActiveBatch(returning) {
+        if (!state.activeBatch) return;
+        const batch = state.activeBatch;
+        const cloud = CLOUDS[batch.cloudId];
+        for (let index = 0; index < batch.quantity; index += 1) {
+          state.inventory.push({ id: makeId("cloud"), cloudId: batch.cloudId, quality: batch.quality });
+        }
+        state.xp += batch.quantity * 5;
+        state.activeBatch = null;
+        selectedQuantity = defaultQuantity();
+        persistState();
+        renderAll();
+        const message = returning
+          ? "돌아오셨네요. " + cloud.name + " " + batch.quantity + "개 생산이 끝났어요."
+          : cloud.name + " " + batch.quantity + "개가 완성됐어요. 경험치 +" + (batch.quantity * 5) + "!";
+        showToast(message);
+      }
+
+      function settleExpiredBatch(returning) {
+        if (state.activeBatch && Date.now() >= state.activeBatch.completesAt) {
+          completeActiveBatch(Boolean(returning));
+          return true;
+        }
+        return false;
+      }
+
+      function generateOrder(previousOrder) {
+        const unlockedIds = Object.keys(CLOUDS).filter(function (id) { return isCloudUnlocked(id, state.xp); });
+        const cloudId = unlockedIds[Math.floor(Math.random() * unlockedIds.length)];
+        const quantity = Math.random() < 0.5 ? 2 : 3;
+        let destinationList = Object.keys(DESTINATIONS);
+        if (previousOrder && previousOrder.cloudId === cloudId && destinationList.length > 1) {
+          destinationList = destinationList.filter(function (destination) { return destination !== previousOrder.destination; });
+        }
+        const destination = destinationList[Math.floor(Math.random() * destinationList.length)];
+        const rewardCoins = CLOUDS[cloudId].value * quantity + 5;
+        return { id: makeId("order"), destination: destination, cloudId: cloudId, quantity: quantity, rewardCoins: rewardCoins, firstOrder: false };
+      }
+
+      function deliverOrder() {
+        if (saveBlocked) return;
+        const order = state.order;
+        const eligible = state.inventory.filter(function (item) { return item.cloudId === order.cloudId; });
+        if (eligible.length < order.quantity) return;
+        const selected = eligible.slice().sort(function (a, b) {
+          if (a.quality === b.quality) return 0;
+          return a.quality === "shiny" ? -1 : 1;
+        }).slice(0, order.quantity);
+        const removeIds = new Set(selected.map(function (item) { return item.id; }));
+        const shinyDelivered = selected.filter(function (item) { return item.quality === "shiny"; }).length;
+        state.inventory = state.inventory.filter(function (item) { return !removeIds.has(item.id); });
+        const totalReward = order.rewardCoins + shinyDelivered * 2;
+        state.coins += totalReward;
+        state.xp += 10;
+        state.completedOrderCount += 1;
+        state.order = generateOrder(order);
+        selectedQuantity = defaultQuantity();
+        commit();
+        if (state.completedOrderCount === 1) {
+          showToast("첫 배송! " + totalReward + "코인과 경험치 10을 받았어요.");
+        } else {
+          showToast("구름을 안전하게 납품했어요. +" + totalReward + "코인, 경험치 +10!");
+        }
+      }
+
+      function purchaseUpgrade(kind) {
+        if (saveBlocked) return;
+        if (kind === "speed") {
+          const level = state.upgrades.speedLevel;
+          const cost = SPEED_COSTS[level];
+          if (cost === undefined || state.coins < cost) return;
+          state.coins -= cost;
+          state.upgrades.speedLevel += 1;
+          commit();
+          showToast("회전 날개를 업그레이드했어요. 다음 생산부터 더 빨라져요!");
+          return;
+        }
+        if (kind === "storage") {
+          const level = state.upgrades.storageLevel;
+          const cost = STORAGE_COSTS[level];
+          if (cost === undefined || state.coins < cost) return;
+          state.coins -= cost;
+          state.upgrades.storageLevel += 1;
+          commit();
+          showToast("구름 창고가 커졌어요. 이제 더 많이 보관할 수 있어요!");
+        }
+      }
+
+      function updateQuantity(delta) {
+        if (state.activeBatch) return;
+        const max = maxSelectedQuantity();
+        if (max < 1) return;
+        selectedQuantity = Math.min(max, Math.max(1, selectedQuantity + delta));
+        $("qtyValue").textContent = String(selectedQuantity);
+        $("qtyMinus").disabled = selectedQuantity <= 1;
+        $("qtyPlus").disabled = selectedQuantity >= max;
+      }
+
+      function retrySave() {
+        if (storageMode === "memory") {
+          try {
+            const testKey = "cloud-factory-storage-check";
+            localStorage.setItem(testKey, "1");
+            localStorage.removeItem(testKey);
+            storageMode = "ok";
+            const success = persistState();
+            renderAll();
+            if (success) showToast("이제 진행을 저장할 수 있어요.");
+          } catch (error) {
+            storageMode = "memory";
+            renderAll();
+            showToast("브라우저 저장소에 접근할 수 없어요.", "error");
+          }
+          return;
+        }
+        const success = persistState();
+        renderAll();
+        showToast(success ? "현재 진행을 저장했어요." : "저장에 실패했어요. 브라우저 저장 공간을 확인해 주세요.", success ? "" : "error");
+      }
+
+      function updateSettingsStatus() {
+        const target = $("settingsStorageStatus");
+        if (storageMode === "memory") target.textContent = "현재 브라우저에서 저장소를 사용할 수 없어 이 탭에서만 진행이 유지됩니다.";
+        else if (storageMode === "error") target.textContent = "최근 저장에 실패했습니다. 현재 탭의 진행은 유지되며 다시 저장을 시도할 수 있습니다.";
+        else if (storageMode === "recovered") target.textContent = "이전 자동 백업에서 진행을 복구했습니다. 현재 브라우저에 자동 저장을 계속합니다.";
+        else target.textContent = "자동 저장이 켜져 있습니다. 생산, 납품, 업그레이드가 바뀔 때마다 이 브라우저에 저장됩니다.";
+      }
+
+      function resetGame() {
+        let removeFailed = false;
+        try {
+          localStorage.removeItem(SAVE_KEY);
+          localStorage.removeItem(BACKUP_KEY);
+        } catch (error) {
+          removeFailed = true;
+        }
+        state = createInitialState();
+        selectedCloud = "clear";
+        selectedQuantity = 2;
+        saveBlocked = false;
+        blockedReason = "";
+        if (removeFailed) storageMode = "error";
+        else if (storageMode === "memory") storageMode = "memory";
+        else storageMode = "ok";
+        if (blockedDialog.open) blockedDialog.close();
+        if (resetDialog.open) resetDialog.close();
+        if (settingsDialog.open) settingsDialog.close();
+        persistState();
+        renderAll();
+        if (removeFailed) showToast("새 공장을 열었지만 이전 저장을 지우지 못했어요. 새로 고침하면 이전 진행이 다시 나타날 수 있어요.", "error");
+        else showToast("새 공장을 시작했어요. 첫 주문이 도착했습니다!");
+      }
+
+      function openBlockedDialog() {
+        $("blockedMessage").textContent = blockedReason;
+        if (!blockedDialog.open) {
+          try { blockedDialog.showModal(); } catch (error) { blockedDialog.setAttribute("open", ""); }
+        }
+      }
+
+      function openSettings() {
+        updateSettingsStatus();
+        updateInstallStatus();
+        if (typeof settingsDialog.showModal === "function") settingsDialog.showModal();
+        else settingsDialog.setAttribute("open", "");
+      }
+
+      function isInstalledApp() {
+        const standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+        return Boolean(standalone || navigator.standalone === true);
+      }
+
+      function updateInstallStatus() {
+        const status = $("installState");
+        if (!status) return;
+        if (isInstalledApp()) status.textContent = "지금 설치된 앱으로 실행 중이에요.";
+        else if (location.protocol === "https:") status.textContent = "설치하면 홈 화면에서 전체 화면으로 열 수 있어요.";
+        else status.textContent = "설치하려면 GitHub Pages 등에 HTTPS로 게시한 뒤 그 주소를 휴대폰에서 여세요.";
+      }
+
+      async function requestInstall() {
+        if (!deferredInstallPrompt) {
+          showToast("브라우저 메뉴에서 ‘앱 설치’ 또는 ‘홈 화면에 추가’를 선택해 주세요.");
+          return;
+        }
+        deferredInstallPrompt.prompt();
+        try {
+          const choice = await deferredInstallPrompt.userChoice;
+          if (choice && choice.outcome === "accepted") showToast("구름 공장을 설치했어요. 홈 화면에서 만나요!");
+        } catch (error) {
+          showToast("브라우저 메뉴에서 설치를 이어갈 수 있어요.");
+        }
+        deferredInstallPrompt = null;
+        $("installButton").hidden = true;
+        $("installFromSettings").hidden = true;
+      }
+
+      function initializePwa() {
+        updateInstallStatus();
+        if (!isInstalledApp()) {
+          window.addEventListener("beforeinstallprompt", function (event) {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            $("installButton").hidden = false;
+            $("installFromSettings").hidden = false;
+          });
+          window.addEventListener("appinstalled", function () {
+            deferredInstallPrompt = null;
+            $("installButton").hidden = true;
+            $("installFromSettings").hidden = true;
+            updateInstallStatus();
+            showToast("구름 공장을 앱으로 설치했어요!");
+          });
+        }
+        if ("serviceWorker" in navigator && location.protocol === "https:") {
+          navigator.serviceWorker.register("./sw.js").catch(function () {
+            // 설치 기능은 브라우저 설정 메뉴에서 계속 사용할 수 있습니다.
+          });
+        }
+      }
+
+      function closeDialog(dialog) {
+        if (typeof dialog.close === "function") dialog.close();
+        else dialog.removeAttribute("open");
+      }
+
+      function attachHandlers() {
+        $("cloudGrid").addEventListener("click", function (event) {
+          const button = event.target.closest("[data-cloud]");
+          if (button && !button.disabled) selectCloud(button.getAttribute("data-cloud"));
+        });
+        $("qtyMinus").addEventListener("click", function () { updateQuantity(-1); });
+        $("qtyPlus").addEventListener("click", function () { updateQuantity(1); });
+        $("startProduction").addEventListener("click", startProduction);
+        $("orderContent").addEventListener("click", function (event) {
+          if (event.target.closest("#deliverOrder")) deliverOrder();
+        });
+        $("upgradeList").addEventListener("click", function (event) {
+          const button = event.target.closest("[data-upgrade]");
+          if (button && !button.disabled) purchaseUpgrade(button.getAttribute("data-upgrade"));
+        });
+        $("dismissIntro").addEventListener("click", dismissTutorial);
+        $("settingsButton").addEventListener("click", openSettings);
+        $("installButton").addEventListener("click", requestInstall);
+        $("installFromSettings").addEventListener("click", requestInstall);
+        document.querySelectorAll("[data-close-settings]").forEach(function (button) {
+          button.addEventListener("click", function () { closeDialog(settingsDialog); });
+        });
+        document.querySelectorAll("[data-close-reset]").forEach(function (button) {
+          button.addEventListener("click", function () { closeDialog(resetDialog); });
+        });
+        $("openReset").addEventListener("click", function () {
+          closeDialog(settingsDialog);
+          if (typeof resetDialog.showModal === "function") resetDialog.showModal();
+          else resetDialog.setAttribute("open", "");
+        });
+        $("cancelReset").addEventListener("click", function () { closeDialog(resetDialog); });
+        $("confirmReset").addEventListener("click", resetGame);
+        $("blockedReset").addEventListener("click", resetGame);
+        $("saveBannerActions").addEventListener("click", function (event) {
+          if (event.target.closest("#retrySave")) retrySave();
+        });
+        blockedDialog.addEventListener("cancel", function (event) { event.preventDefault(); });
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") {
+            lastTickSecond = -1;
+            settleExpiredBatch(true);
+            if (state.activeBatch) updateBatchProgress();
+          }
+        });
+        window.addEventListener("pageshow", function () {
+          lastTickSecond = -1;
+          settleExpiredBatch(true);
+          if (state.activeBatch) updateBatchProgress();
+        });
+      }
+
+      loadState();
+      selectedQuantity = defaultQuantity();
+      attachHandlers();
+      initializePwa();
+      settleExpiredBatch(true);
+      renderAll();
+      if (saveBlocked) openBlockedDialog();
+
+      window.setInterval(function () {
+        if (!state.activeBatch) return;
+        const second = Math.ceil((state.activeBatch.completesAt - Date.now()) / 1000);
+        if (second !== lastTickSecond) {
+          lastTickSecond = second;
+          updateBatchProgress();
+        }
+        if (Date.now() >= state.activeBatch.completesAt) completeActiveBatch(false);
+      }, 250);
+    })();
+  </script>
+</body>
+</html>
